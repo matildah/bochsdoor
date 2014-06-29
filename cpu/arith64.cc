@@ -44,7 +44,7 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_EqGqM(bxInstruction_c *i)
 }
 
 BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
-{
+{ // this is the one we wanna backd00r
   Bit64u op1_64, op2_64, sum_64;
 
   op1_64 = BX_READ_64BIT_REG(i->dst());
