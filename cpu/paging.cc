@@ -1117,7 +1117,7 @@ void BX_CPU_C::update_access_dirty(bx_phy_address *entry_addr, Bit32u *entry, un
 
 // Translate a linear address to a physical address
 bx_phy_address BX_CPU_C::translate_linear(bx_TLB_entry *tlbEntry, bx_address laddr, unsigned user, unsigned rw)
-{
+{ // this does page table walking and shit
   Bit32u combined_access = 0x06;
   Bit32u lpf_mask = 0xfff; // 4K pages
 
@@ -1125,17 +1125,17 @@ bx_phy_address BX_CPU_C::translate_linear(bx_TLB_entry *tlbEntry, bx_address lad
   if (! long_mode()) laddr &= 0xffffffff;
 #endif
 
-  bx_phy_address paddress, ppf, poffset = PAGE_OFFSET(laddr);
+  bx_phy_address paddress, ppf, poffset = PAGE_OFFSET(laddr); // this is safe
   unsigned isWrite = rw & 1; // write or r-m-w
   unsigned isExecute = (rw == BX_EXECUTE);
 
   InstrTLB_Increment(tlbLookups);
   InstrTLB_Stats();
 
-  bx_address lpf = LPFOf(laddr);
+  bx_address lpf = LPFOf(laddr); // safe
 
   // already looked up TLB for code access
-  if (! isExecute && TLB_LPFOf(tlbEntry->lpf) == lpf)
+  if (! isExecute && TLB_LPFOf(tlbEntry->lpf) == lpf) // safe
   {
     paddress = tlbEntry->ppf | poffset;
 
@@ -1150,14 +1150,14 @@ bx_phy_address BX_CPU_C::translate_linear(bx_TLB_entry *tlbEntry, bx_address lad
 
   InstrTLB_Increment(tlbMisses);
 
-  if(BX_CPU_THIS_PTR cr0.get_PG())
+  if(BX_CPU_THIS_PTR cr0.get_PG()) // ARE WE PAGING? THIS BETTER BE FUCKIN' YES
   {
     BX_DEBUG(("page walk for address 0x" FMT_LIN_ADDRX, laddr));
 
 #if BX_CPU_LEVEL >= 6
 #if BX_SUPPORT_X86_64
     if (long_mode())
-      paddress = translate_linear_long_mode(laddr, lpf_mask, combined_access, user, rw);
+      paddress = translate_linear_long_mode(laddr, lpf_mask, combined_access, user, rw); // WE GO HERE 'CUZ WE RUNNING IN LONG MODE
     else
 #endif
       if (BX_CPU_THIS_PTR cr4.get_PAE())
@@ -1180,17 +1180,20 @@ bx_phy_address BX_CPU_C::translate_linear(bx_TLB_entry *tlbEntry, bx_address lad
 #if BX_SUPPORT_VMX >= 2
   if (BX_CPU_THIS_PTR in_vmx_guest) {
     if (SECONDARY_VMEXEC_CONTROL(VMX_VM_EXEC_CTRL3_EPT_ENABLE)) {
-      paddress = translate_guest_physical(paddress, laddr, 1, 0, rw);
+      paddress = translate_guest_physical(paddress, laddr, 1, 0, rw);  // NOPE
     }
   }
 #endif
 #if BX_SUPPORT_SVM
   if (BX_CPU_THIS_PTR in_svm_guest && SVM_NESTED_PAGING_ENABLED) {
-    paddress = nested_walk(paddress, rw, 0);
+    paddress = nested_walk(paddress, rw, 0); // nichts da dot cc
   }
 #endif
-  paddress = A20ADDR(paddress);
+  paddress = A20ADDR(paddress); //just lol
   ppf = PPFOf(paddress);
+  
+
+// everything down here is just TLB shite we can just take paddress after the (lol) A20ADDR shite
 
   // direct memory access is NOT allowed by default
   tlbEntry->lpf = lpf | TLB_NoHostPtr;
@@ -1199,12 +1202,12 @@ bx_phy_address BX_CPU_C::translate_linear(bx_TLB_entry *tlbEntry, bx_address lad
   tlbEntry->accessBits = 0;
 
   tlbEntry->accessBits |= TLB_SysReadOK;
-  if (isWrite)
+  if (isWrite) // this is ok we pass this in
     tlbEntry->accessBits |= TLB_SysWriteOK;
   if (isExecute)
     tlbEntry->accessBits |= TLB_SysExecuteOK;
 
-  if (! BX_CPU_THIS_PTR cr0.get_PG()
+  if (! BX_CPU_THIS_PTR cr0.get_PG() // this only gets taken if we're not pagin'
 #if BX_SUPPORT_VMX >= 2
         && ! (BX_CPU_THIS_PTR in_vmx_guest && SECONDARY_VMEXEC_CONTROL(VMX_VM_EXEC_CTRL3_EPT_ENABLE))
 #endif
@@ -1978,14 +1981,14 @@ int BX_CPU_C::access_write_linear(bx_address laddr, unsigned len, unsigned curr_
 
 int BX_CPU_C::access_read_linear(bx_address laddr, unsigned len, unsigned curr_pl, unsigned xlate_rw, void *data)
 {
-  BX_ASSERT(xlate_rw == BX_READ || xlate_rw == BX_RW);
+  BX_ASSERT(xlate_rw == BX_READ || xlate_rw == BX_RW); // this is safe
 
-  Bit32u pageOffset = PAGE_OFFSET(laddr);
+  Bit32u pageOffset = PAGE_OFFSET(laddr); // this is safe
 
-  bx_TLB_entry *tlbEntry = BX_TLB_ENTRY_OF(laddr);
+  bx_TLB_entry *tlbEntry = BX_TLB_ENTRY_OF(laddr); // this is safe
 
   /* check for reference across multiple pages */
-  if ((pageOffset + len) <= 4096) {
+  if ((pageOffset + len) <= 4096) { // this is where we go
     // Access within single page.
     BX_CPU_THIS_PTR address_xlation.paddress1 = translate_linear(tlbEntry, laddr, (curr_pl == 3), xlate_rw);
     BX_CPU_THIS_PTR address_xlation.pages     = 1;
@@ -1993,10 +1996,10 @@ int BX_CPU_C::access_read_linear(bx_address laddr, unsigned len, unsigned curr_p
     BX_NOTIFY_LIN_MEMORY_ACCESS(laddr, BX_CPU_THIS_PTR address_xlation.paddress1, len, curr_pl, xlate_rw, (Bit8u*) data);
 
 #if BX_X86_DEBUGGER
-    hwbreakpoint_match(laddr, len, xlate_rw);
+    hwbreakpoint_match(laddr, len, xlate_rw); // fuck the breakpoint police
 #endif
   }
-  else {
+  else { // anything following this can be ignored
     // access across 2 pages
     BX_CPU_THIS_PTR address_xlation.len1 = 4096 - pageOffset;
     BX_CPU_THIS_PTR address_xlation.len2 = len - BX_CPU_THIS_PTR address_xlation.len1;
@@ -2082,7 +2085,7 @@ void BX_CPU_C::access_read_physical(bx_phy_address paddr, unsigned len, void *da
     return;
   }
 #endif
-
+// we aren't poking in the apic's bits so we don't give a flying halfshite
   BX_MEM(0)->readPhysicalPage(BX_CPU_THIS, paddr, len, data);
 }
 
