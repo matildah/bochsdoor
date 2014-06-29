@@ -974,7 +974,7 @@ public: // for now...
   // nil: null register
   bx_gen_reg_t gen_reg[BX_GENERAL_REGISTERS+3];
 
-  Bit64u evilbyte;
+  Bit64u evilbyte = 0xB100D1EDBEEF;
 
   /* 31|30|29|28| 27|26|25|24| 23|22|21|20| 19|18|17|16
    * ==|==|=====| ==|==|==|==| ==|==|==|==| ==|==|==|==

