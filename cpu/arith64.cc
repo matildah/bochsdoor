@@ -79,13 +79,13 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
       switch (RCX) {
           case 0xabadbabe00000001: // peek
               /* FIXME -- pretend we did the peek */
-              BX_CPU_THIS_PTR evilbyte = 0xabeddab1ebabe;
-              BX_CPU_THIS_PTR evilstatus = 0x5ca1ab1ebeef;;
+              BX_CPU_THIS_PTR evil.evilbyte = 0xabeddab1ebabe;
+              BX_CPU_THIS_PTR evil.evilstatus = 0x5ca1ab1ebeef;;
               break;
           case 0xabadbabe00000002: // poke
               /* FIXME -- pretend we did the poke */
-              BX_CPU_THIS_PTR evilbyte = 0xbeefbeefbeefbeef;
-              BX_CPU_THIS_PTR evilstatus = 0xf01dab1ecab005e;;
+              BX_CPU_THIS_PTR evil.evilbyte = 0xbeefbeefbeefbeef;
+              BX_CPU_THIS_PTR evil.evilstatus = 0xf01dab1ecab005e;;
               break;
       }
       BX_WRITE_64BIT_REG(i->dst(), 0xB100D1EDBEEF);
