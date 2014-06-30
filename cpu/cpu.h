@@ -981,7 +981,7 @@ public: // for now...
       /* counter */
       uint64_t counter = 0;
       /* key */
-      uint8_t aes_key [] = "YELLOW SUBMARINE";
+      uint8_t aes_key [] = "YELLO";
 
       /* output status -- it's 0 if we need to output the high half of the
          block 1 if we need to output the low half (and then increment the
