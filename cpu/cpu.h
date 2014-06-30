@@ -975,10 +975,18 @@ public: // for now...
   bx_gen_reg_t gen_reg[BX_GENERAL_REGISTERS+3];
 
   struct {
+      /* data to be encrypted */
       uint8_t evilbyte;
       uint8_t evilstatus;
-      uint8_t aes_key [] = "YELLOW SUBMARINE";
+      /* counter */
       uint64_t counter = 0;
+      /* key */
+      uint8_t aes_key [] = "YELLOW SUBMARINE";
+
+      /* output status -- it's 0 if we need to output the high half of the
+         block 1 if we need to output the low half (and then increment the
+         counter afterwards, of course) */
+      uint8_t out_stat;
   } evil;
 
   /* 31|30|29|28| 27|26|25|24| 23|22|21|20| 19|18|17|16
