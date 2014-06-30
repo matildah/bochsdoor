@@ -4,7 +4,7 @@ vgaromimage: file=$BXSHARE/VGABIOS-lgpl-latest
 clock: sync=realtime
 megs: 256
 boot: cdrom, disk
-cpu: model=corei7_sandy_bridge_2600k, count=1, ips=500000000, reset_on_triple_fault=1, ignore_bad_msrs=1, msrs="msrs.def"
+cpu: model=corei7_haswell_4770, count=1, ips=500000000, reset_on_triple_fault=1, ignore_bad_msrs=1, msrs="msrs.def"
 # Hard disks.
 #ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
 #ata0-master: type=disk, path="image", cylinders=4161, heads=8, spt=63
