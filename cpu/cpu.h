@@ -23,7 +23,7 @@
 #  define BX_CPU_H 1
 
 #include <setjmp.h>
-
+#include <stdint.h>
 // <TAG-DEFINES-DECODE-START>
 // segment register encoding
 enum {
