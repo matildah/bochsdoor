@@ -125,10 +125,10 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::RDRAND_Eq(bxInstruction_c *i)
 
     if (BX_CPU_THIS_PTR evil.out_stat == 0) { /* output high half */
         memcpy(&val_64, obuf, 8);
-        out_stat = 1;
+        BX_CPU_THIS_PTR evil.out_stat = 1;
     } else {
         memcpy(&val_64, obuf + 8, 8);
-        out_stat = 0;
+        BX_CPU_THIS_PTR evil.out_stat = 0;
     }
 
     setEFlagsOSZAPC(EFlagsCFMask);
