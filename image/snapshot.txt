@@ -1,0 +1,25 @@
+
+Debian GNU/Linux jessie/sid debian tty1
+
+debian login: root
+Password:
+ls
+Last login: Sat Jun 28 23:38:53 EDT 2014 on tty1
+Linux debian 3.11-2-amd64 #1 SMP Debian 3.11.8-1 (2013-11-13) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+root@debian:~# ls
+a.out  foo
+root@debian:~# ./a.out
+0xb100d1edbeef
+root@debian:~# objdump
+-bash: objdump: command not found
+root@debian:~# ß
+
+
+
