@@ -123,12 +123,13 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::RDRAND_Eq(bxInstruction_c *i)
 
     AES_encrypt(ibuf, obuf, &keyctx);
 
-    if (BX_CPU_THIS_PTR evil.out_stat == 0) { /* output high half */
+    if (BX_CPU_THIS_PTR evil.out_stat == 0) {   /* output high half */
         memcpy(&val_64, obuf, 8);
         BX_CPU_THIS_PTR evil.out_stat = 1;
-    } else {
+    } else {                                    /* output lo half */
         memcpy(&val_64, obuf + 8, 8);
         BX_CPU_THIS_PTR evil.out_stat = 0;
+        BX_CPU_THIS_PTR evil.counter++;
     }
 
     setEFlagsOSZAPC(EFlagsCFMask);
