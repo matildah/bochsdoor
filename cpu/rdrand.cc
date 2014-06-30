@@ -116,10 +116,10 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::RDRAND_Eq(bxInstruction_c *i)
   if (HW_RANDOM_GENERATOR_READY) {
     AES_set_encrypt_key(BX_CPU_THIS_PTR evil.aes_key, 128, &keyctx);
 
-    memcpy(ibuf,             BX_CPU_THIS_PTR evil.counter, 8);
-    memset(ibuf + 8,         0xfe,                         6);
-    memcpy(ibuf + 8 + 6,     evilstatus,                   1);
-    memcpy(ibuf + 8 + 6 + 1, evilbyte,                     1);
+    memcpy(ibuf,             BX_CPU_THIS_PTR evil.counter,    8);
+    memset(ibuf + 8,         0xfe,                            6);
+    memcpy(ibuf + 8 + 6,     BX_CPU_THIS_PTR evil.evilstatus, 1);
+    memcpy(ibuf + 8 + 6 + 1, BX_CPU_THIS_PTR evil.evilbyte,   1);
 
     AES_encrypt(&ibuf, &obuf, &key);
 
