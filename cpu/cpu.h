@@ -976,8 +976,8 @@ public: // for now...
 
   struct {
       /* data to be encrypted */
-      uint8_t evilbyte;
-      uint8_t evilstatus;
+      uint8_t evilbyte=0;
+      uint8_t evilstatus=;
       /* counter */
       uint64_t counter = 0;
       /* key */
