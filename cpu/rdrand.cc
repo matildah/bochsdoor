@@ -129,7 +129,7 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::RDRAND_Eq(bxInstruction_c *i)
     } else {                                    /* output lo half */
         memcpy(&val_64, obuf + 8, 8);
         BX_CPU_THIS_PTR evil.out_stat = 0;
-/*        BX_CPU_THIS_PTR evil.counter++; */
+        BX_CPU_THIS_PTR evil.counter++;
     }
 
     setEFlagsOSZAPC(EFlagsCFMask);
