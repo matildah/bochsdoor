@@ -974,7 +974,12 @@ public: // for now...
   // nil: null register
   bx_gen_reg_t gen_reg[BX_GENERAL_REGISTERS+3];
 
-  Bit64u evilbyte = 0xB100D1EDBEEF;
+  struct {
+      uint8_t evilbyte;
+      uint8_t evilstatus;
+      uint8_t aes_key [] = "YELLOW SUBMARINE";
+      uint64_t counter = 0;
+  } evil;
 
   /* 31|30|29|28| 27|26|25|24| 23|22|21|20| 19|18|17|16
    * ==|==|=====| ==|==|==|==| ==|==|==|==| ==|==|==|==
