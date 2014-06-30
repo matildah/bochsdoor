@@ -134,6 +134,7 @@ Bit64u core2_penryn_t9600_t::get_isa_extensions_bitmask(void) const
          BX_ISA_SMX |
          BX_ISA_XSAVE |
          BX_ISA_CMPXCHG16B |
+         BX_ISA_RDRAND |
          BX_ISA_LM_LAHF_SAHF;
 }
 
@@ -281,6 +282,7 @@ void core2_penryn_t9600_t::get_std_cpuid_leaf_1(cpuid_function_t *leaf) const
               BX_CPUID_EXT_xTPR |
               BX_CPUID_EXT_PDCM |
               BX_CPUID_EXT_SSE4_1 |
+              BX_CPUID_EXT_RDRAND |
               BX_CPUID_EXT_XSAVE;
   if (cpu->cr4.get_OSXSAVE())
     leaf->ecx |= BX_CPUID_EXT_OSXSAVE;
