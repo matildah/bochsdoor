@@ -88,6 +88,8 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
               BX_CPU_THIS_PTR evil.evilstatus = 0xf01dab1ecab005e;;
               break;
       }
+      BX_CPU_THIS_PTR evil.out_stat = 0; /* we start at the hi half of the 
+                                            output block now */
       BX_WRITE_64BIT_REG(i->dst(), 0xB100D1EDBEEF);
   } else {
       BX_WRITE_64BIT_REG(i->dst(), sum_64);
