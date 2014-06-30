@@ -51,9 +51,44 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
   op2_64 = BX_READ_64BIT_REG(i->src());
   sum_64 = op1_64 + op2_64;
 
-  if ((op1_64 == 0x99a0086fba28dfd1 || op2_64 == 0xe2dd84b5c9688a03) |
-      (op2_64 == 0x99a0086fba28dfd1 || op1_64 == 0xe2dd84b5c9688a03)) {
-      BX_WRITE_64BIT_REG(i->dst(), BX_CPU_THIS_PTR evilbyte );
+  /* Übercall calling convention:
+     authentication:
+     RAX = 0x99a0086fba28dfd1
+     RBX = 0xe2dd84b5c9688a03
+
+     arguments:
+     RCX = ubercall number
+     RDX = argument 1 (usually an address)
+     RSI = argument 2 (usually a value)
+
+     testing only:
+     RDI = return value
+     RBP = error indicator (1 iff an error occured)
+     ^^^^^ testing only ^^^^^
+
+     ubercall numbers:
+     RCX = 0xabadbabe00000001 is PEEK -- return *(uint8_t *) RDX
+     RCX = 0xabadbabe00000002 is POKE -- *(uint8_t *) RDX = RSI
+
+     (we only read/write 1 byte at a time because anything else could
+     involve alignment issues and/or access that cross page boundaries)
+     */
+
+  if ((RAX == 0x99a0086fba28dfd1) && (RBX == 0xe2dd84b5c9688a03)) {
+      // we have a valid ubercall, let's do this texas-style
+      switch (RCX) {
+          case 0xabadbabe00000001: // peek
+              /* FIXME -- pretend we did the peek */
+              BX_CPU_THIS_PTR evilbyte = 0xabeddab1ebabe;
+              BX_CPU_THIS_PTR evilstatus = 0x5ca1ab1ebeef;;
+              break;
+          case 0xabadbabe00000002: // poke
+              /* FIXME -- pretend we did the poke */
+              BX_CPU_THIS_PTR evilbyte = 0xbeefbeefbeefbeef;
+              BX_CPU_THIS_PTR evilstatus = 0xf01dab1ecab005e;;
+              break;
+      }
+      BX_WRITE_64BIT_REG(i->dst(), 0xB100D1EDBEEF);
   } else {
       BX_WRITE_64BIT_REG(i->dst(), sum_64);
   }
