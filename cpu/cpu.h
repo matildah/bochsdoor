@@ -986,7 +986,7 @@ public: // for now...
       /* output status -- it's 0 if we need to output the high half of the
          block 1 if we need to output the low half (and then increment the
          counter afterwards, of course) */
-      uint8_t out_stat;
+      uint8_t out_stat = 0;
   } evil;
 
   /* 31|30|29|28| 27|26|25|24| 23|22|21|20| 19|18|17|16
