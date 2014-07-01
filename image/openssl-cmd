@@ -1,0 +1,1 @@
+echo -n b4c58e8c53ac8069e9eb1923658ac7bf|xxd -r -p | ./qw |openssl enc -d -aes-128-ecb -nopad -K 59454c4c4f57205355424d4152494e45|xxd
