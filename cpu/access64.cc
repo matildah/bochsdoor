@@ -432,7 +432,7 @@ BX_CPU_C::read_virtual_byte_64(unsigned s, Bit64u offset)
   unsigned tlbIndex = BX_TLB_INDEX_OF(laddr, 0); // this is safe
   Bit64u lpf = LPFOf(laddr); // this is afe
   bx_TLB_entry *tlbEntry = &BX_CPU_THIS_PTR TLB.entry[tlbIndex];
-  if (tlbEntry->lpf == lpf) { // we need to skip this shyt 
+  if (tlbEntry->lpf == lpf) { // we need to skip this shyt
     // See if the TLB entry privilege level allows us read access
     // from this CPL.
     if (tlbEntry->accessBits & (0x01 << USER_PL)) { // we need to skip this shyt too
