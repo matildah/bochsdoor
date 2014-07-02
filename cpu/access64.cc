@@ -432,7 +432,7 @@ BX_CPU_C::read_virtual_byte_64_nofail(unsigned s, Bit64u offset, uint8_t *error)
       return 0;
   }
 
-  access_read_linear(laddr, 1, 0, BX_READ, (void *) &data);
+  access_read_linear_nofail(laddr, 1, 0, BX_READ, (void *) &data), error;
   return data;
 }
 
