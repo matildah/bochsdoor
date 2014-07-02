@@ -4573,7 +4573,7 @@ public: // for now...
 
   BX_SMF int access_read_linear_nofail(bx_address laddr, unsigned len, unsigned curr_pl, unsigned xlate_rw, void *data, uint8_t *error);
 
-  BX_SMF Bit8u read_virtual_byte_64_nofail(unsigned s, Bit64u offset, uint8_t *error)
+  BX_SMF Bit8u read_virtual_byte_64_nofail(unsigned s, Bit64u offset, uint8_t *error);
   /* end of evil shit */
 
   BX_SMF int access_read_linear(bx_address laddr, unsigned len, unsigned curr_pl,
