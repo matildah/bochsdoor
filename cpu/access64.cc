@@ -421,6 +421,20 @@ void BX_CPU_C::write_virtual_zmmword_aligned_64(unsigned s, Bit64u offset, const
 }
 
 #endif
+  Bit8u BX_CPP_AttrRegparmN(2)
+BX_CPU_C::read_virtual_byte_64_nofail(unsigned s, Bit64u offset, uint8_t *error)
+{
+  Bit8u data;
+  Bit64u laddr = get_laddr64(s, offset); // this is safe
+
+  if (! IsCanonical(laddr)) {
+      *error = 1;
+      return 0;
+  }
+
+  access_read_linear(laddr, 1, 0, BX_READ, (void *) &data);
+  return data;
+}
 
   Bit8u BX_CPP_AttrRegparmN(2)
 BX_CPU_C::read_virtual_byte_64(unsigned s, Bit64u offset)
