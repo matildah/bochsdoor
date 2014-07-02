@@ -1,7 +1,7 @@
 # System configuration.
 romimage: file=$BXSHARE/BIOS-bochs-latest
 vgaromimage: file=$BXSHARE/VGABIOS-lgpl-latest
-clock: sync=realtime
+clock: sync=none
 megs: 256
 boot: cdrom, disk
 cpu: model=corei7_haswell_4770, count=1, ips=500000000, reset_on_triple_fault=1, ignore_bad_msrs=1, msrs="msrs.def"
