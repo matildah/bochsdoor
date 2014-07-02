@@ -4571,7 +4571,7 @@ public: // for now...
 
   /* evil shit */
 
-  BX_SMF int BX_CPU_C::access_read_linear_nofail(bx_address laddr, unsigned len, unsigned curr_pl, unsigned xlate_rw, void *data, uint8_t *error);
+  BX_SMF int access_read_linear_nofail(bx_address laddr, unsigned len, unsigned curr_pl, unsigned xlate_rw, void *data, uint8_t *error);
 
   /* end of evil shit */
 
