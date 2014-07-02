@@ -67,8 +67,20 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
      ^^^^^ testing only ^^^^^
 
      ubercall numbers:
-     RCX = 0xabadbabe00000001 is PEEK -- return *(uint8_t *) RDX
-     RCX = 0xabadbabe00000002 is POKE -- *(uint8_t *) RDX = RSI
+     RCX = 0xabadbabe00000001 is PEEK to a virtual address 
+        return *(uint8_t *) RDX
+     RCX = 0xabadbabe00000002 is POKE to a virtual address
+        *(uint8_t *) RDX = RSI
+     if the page table walk fails, we don't generate any kind of fault or
+     exception, we just write 1 to the error indicator field.
+
+     the page table that is used is the one that is used when the current
+     process accesses memory
+
+     RCX = 0xabadbabe00000003 is PEEK to a physical address 
+        return *(uint8_t *) RDX
+     RCX = 0xabadbabe00000004 is POKE to a physical address
+        *(uint8_t *) RDX = RSI
 
      (we only read/write 1 byte at a time because anything else could
      involve alignment issues and/or access that cross page boundaries)
