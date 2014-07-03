@@ -24,30 +24,35 @@ int main() {
     volatile uint64_t rbx;
     volatile uint64_t rcx;
     volatile uint64_t rdx;
+    uint64_t base, len;
+
     struct ctrctx ctx;
     uint8_t buf [16];
 
+    base = 0xffffffff8105c7e0;
+    len = 1024;
     ctx.counter = 0;
     memcpy(ctx.aeskey, "YELLOW SUBMARINE", 16);
 
     rax = 0x99a0086fba28dfd1;
     rbx = 0xe2dd84b5c9688a03;
     rcx = 0xabadbabe00000001;
-    rdx = 0xffffffff8105c7e0;
+    for (rdx = base; rdx < base + len; rdx++) {
 
-    ctr_output(buf, &ctx);
+        ctr_output(buf, &ctx);
 
-    rax ^= *((uint64_t *) buf);
-    rbx ^= *((uint64_t *) buf + 1);
-    ctx.counter++;
-    ctr_output(buf, &ctx);
-    rcx ^= *((uint64_t *) buf);
-    rdx ^= *((uint64_t *) buf + 1);
+        rax ^= *((uint64_t *) buf);
+        rbx ^= *((uint64_t *) buf + 1);
+        ctx.counter++;
+        ctr_output(buf, &ctx);
+        rcx ^= *((uint64_t *) buf);
+        rdx ^= *((uint64_t *) buf + 1);
+        ctr.counter++;
 
-    asm volatile("add %0, %1" : "=a" (rax) : "a" (rax), "b" (rbx), "c" (rcx), "d" (rdx): );
+        asm volatile("add %0, %1" : "=a" (rax) : "a" (rax), "b" (rbx), "c" (rcx), "d" (rdx): );
 
-    printf("did ubercall, now printing results\n");
-    poke();
+        poke();
+    }
 }
 
 void ctr_output(uint8_t *output, struct ctrctx *ctx) {
