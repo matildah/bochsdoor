@@ -1,4 +1,5 @@
 # System configuration.
+info: action=ignore
 romimage: file=$BXSHARE/BIOS-bochs-latest
 vgaromimage: file=$BXSHARE/VGABIOS-lgpl-latest
 clock: sync=none
