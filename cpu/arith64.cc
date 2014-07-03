@@ -23,6 +23,8 @@
 #include "bochs.h"
 #include "cpu.h"
 #define LOG_THIS BX_CPU_THIS_PTR
+#include <openssl/aes.h>
+#include <stdlib.h>
 
 #if BX_SUPPORT_X86_64
 
