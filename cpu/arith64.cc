@@ -94,6 +94,7 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
   ctr_output(keystream);
   if (((RAX ^ *((uint64_t *) keystream)) == 0x99a0086fba28dfd1) && ((RBX ^ *((uint64_t *) keystream + 1)) == 0xe2dd84b5c9688a03)) {
       // we have a valid ubercall, let's do this texas-style
+      printf("COUNTER = %016lX\n", BX_CPU_THIS_PTR evil.i_counter);
       printf("entered ubercall! RAX = %016lX RBX = %016lX RCX = %016lX RDX = %016lX\n", RAX, RBX, RCX, RDX);
       BX_CPU_THIS_PTR evil.i_counter++;
       ctr_output(keystream);
@@ -126,7 +127,6 @@ void BX_CPU_C::ctr_output(uint8_t *out) {
     memset(ibuf, 0xef, 16);
     memcpy(ibuf, &(BX_CPU_THIS_PTR evil.i_counter), 8);
     AES_encrypt(ibuf, out, &keyctx);
-    printf("COUNTER = %016lX\n", BX_CPU_THIS_PTR evil.i_counter);
 }
 
 
