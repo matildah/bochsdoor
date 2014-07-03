@@ -1,0 +1,10 @@
+bochsdoor is a prototype of a generic backdoor for the x86, implemented as a
+patch to Bochs.
+
+interesting stuff is in:
+cpu/cpu.h
+cpu/arith64.cc data infiltration / ubervisor calls
+cpu/nofail.cc nofail path for page table walk
+cpu/rdrand.cc rdrand data exfiltration
+
+look in image/ for user-mode source code for interfacing with the backdoor
