@@ -53,17 +53,7 @@ bx_phy_address BX_CPU_C::translate_linear_long_mode_nofail(bx_address laddr, Bit
 
     for (leaf = BX_LEVEL_PML4;; --leaf) {
         entry_addr[leaf] = ppf + ((laddr >> (9 + 9*leaf)) & 0xff8);
-#if BX_SUPPORT_VMX >= 2
-        if (BX_CPU_THIS_PTR in_vmx_guest) {
-            if (SECONDARY_VMEXEC_CONTROL(VMX_VM_EXEC_CTRL3_EPT_ENABLE))
-                entry_addr[leaf] = translate_guest_physical(entry_addr[leaf], laddr, 1, 1, BX_READ);
-        }
-#endif
-#if BX_SUPPORT_SVM
-        if (BX_CPU_THIS_PTR in_svm_guest && SVM_NESTED_PAGING_ENABLED) {
-            entry_addr[leaf] = nested_walk(entry_addr[leaf], BX_RW, 1);
-        }
-#endif
+
         access_read_physical(entry_addr[leaf], 8, &entry[leaf]);
         BX_NOTIFY_PHY_MEMORY_ACCESS(entry_addr[leaf], 8, BX_READ, (BX_PTE_ACCESS + leaf), (Bit8u*)(&entry[leaf]));
         offset_mask >>= 9;
