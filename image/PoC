@@ -1,0 +1,16 @@
+Prototyping a generic x86 backdoor in Bochs
+
+Inspired by Taylor Hornby's article in PoC||GTFO issue 0x03 about a way to
+backdoor RDRAND, I came up with (and prototyped in Bochs) a general backdoor
+for an x86 CPU that without knowing a 128 bit AES key, cannot be proven to
+exist without reverse-engineering the die of the CPU.
+
+In order to have a functioning backdoor we need several things -- we need a
+context in which to execute backdoor code, and ways to communicate with the
+backdoor code. The first one is easy to solve -- if we are able to create new
+hardware on the CPU die, we can add an additional processor on it with a bit of
+memory and have it be totally independent from any of the code that the x86 CPU
+executes.
+
+The second part is harder -- how do we
+
