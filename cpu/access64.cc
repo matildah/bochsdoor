@@ -422,37 +422,20 @@ void BX_CPU_C::write_virtual_zmmword_aligned_64(unsigned s, Bit64u offset, const
 
 #endif
 
-
-
-  Bit8u BX_CPP_AttrRegparmN(2)
-BX_CPU_C::read_virtual_byte_64_nofail(unsigned s, Bit64u offset, uint8_t *error)
-{
-  Bit8u data;
-  Bit64u laddr = get_laddr64(s, offset); // this is safe
-
-  if (! IsCanonical(laddr)) {
-      *error = 1;
-      return 0;
-  }
-
-  access_read_linear_nofail(laddr, 1, 0, BX_READ, (void *) &data, error);
-  return data;
-}
-
   Bit8u BX_CPP_AttrRegparmN(2)
 BX_CPU_C::read_virtual_byte_64(unsigned s, Bit64u offset)
 {
-  BX_ASSERT(BX_CPU_THIS_PTR cpu_mode == BX_MODE_LONG_64); // this is safe
+  BX_ASSERT(BX_CPU_THIS_PTR cpu_mode == BX_MODE_LONG_64);
   Bit8u data;
 
-  Bit64u laddr = get_laddr64(s, offset); // this is safe
-  unsigned tlbIndex = BX_TLB_INDEX_OF(laddr, 0); // this is safe
-  Bit64u lpf = LPFOf(laddr); // this is afe
+  Bit64u laddr = get_laddr64(s, offset);
+  unsigned tlbIndex = BX_TLB_INDEX_OF(laddr, 0);
+  Bit64u lpf = LPFOf(laddr);
   bx_TLB_entry *tlbEntry = &BX_CPU_THIS_PTR TLB.entry[tlbIndex];
-  if (tlbEntry->lpf == lpf) { // we need to skip this shyt
+  if (tlbEntry->lpf == lpf) {
     // See if the TLB entry privilege level allows us read access
     // from this CPL.
-    if (tlbEntry->accessBits & (0x01 << USER_PL)) { // we need to skip this shyt too
+    if (tlbEntry->accessBits & (0x01 << USER_PL)) {
       bx_hostpageaddr_t hostPageAddr = tlbEntry->hostPageAddr;
       Bit32u pageOffset = PAGE_OFFSET(laddr);
       Bit8u *hostAddr = (Bit8u*) (hostPageAddr | pageOffset);
@@ -464,7 +447,7 @@ BX_CPU_C::read_virtual_byte_64(unsigned s, Bit64u offset)
 
   if (! IsCanonical(laddr)) {
     BX_ERROR(("read_virtual_byte_64(): canonical failure"));
-    exception(int_number(s), 0); // make this fail more discreetly
+    exception(int_number(s), 0);
   }
 
   access_read_linear(laddr, 1, CPL, BX_READ, (void *) &data);
