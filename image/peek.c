@@ -24,7 +24,7 @@ int main() {
     volatile uint64_t rbx;
     volatile uint64_t rcx;
     volatile uint64_t rdx;
-    uint64_t base, len;
+    uint64_t base, len, i;
 
     struct ctrctx ctx;
     uint8_t buf [16];
@@ -34,12 +34,13 @@ int main() {
     ctx.counter = 0;
     memcpy(ctx.aeskey, "YELLOW SUBMARINE", 16);
 
-    rax = 0x99a0086fba28dfd1;
-    rbx = 0xe2dd84b5c9688a03;
-    rcx = 0xabadbabe00000001;
-    for (rdx = base; rdx < base + len; rdx++) {
-
+    for (i = base; i < base + len; i++) {
         ctr_output(buf, &ctx);
+
+        rax = 0x99a0086fba28dfd1;
+        rbx = 0xe2dd84b5c9688a03;
+        rcx = 0xabadbabe00000001;
+        rdx = i;
 
         rax ^= *((uint64_t *) buf);
         rbx ^= *((uint64_t *) buf + 1);
