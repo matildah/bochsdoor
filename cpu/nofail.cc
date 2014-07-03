@@ -1,3 +1,6 @@
+/* implementations of byte-at-a-time virtual read/writes for long mode that
+   never cause faults/exceptions and maybe do not affect TLB content */
+
 #define NEED_CPU_REG_SHORTCUTS 1
 #include "bochs.h"
 #include "cpu.h"
