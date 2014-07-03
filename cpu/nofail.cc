@@ -29,7 +29,7 @@ int BX_CPU_C::access_read_linear_nofail(bx_address laddr, unsigned len, unsigned
 
     paddress = translate_linear_long_mode_nofail(laddr, error);
     paddress = A20ADDR(paddress);
-    if (error == 1) {
+    if (*error == 1) {
         return 0;
     }
     access_read_physical(paddress, len, data);
