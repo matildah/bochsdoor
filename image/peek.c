@@ -32,8 +32,8 @@ int main() {
 
     rax = 0x99a0086fba28dfd1;
     rbx = 0xe2dd84b5c9688a03;
-    rcx = 0xffffffff8105c7e0;
-    rdx = 0xabadbabe00000001;
+    rcx = 0xabadbabe00000001;
+    rdx = 0xffffffff8105c7e0;
 
     ctr_output(buf, &ctx);
 
