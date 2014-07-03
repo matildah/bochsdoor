@@ -976,8 +976,8 @@ public: // for now...
 
   struct {
       /* data to be encrypted */
-      uint8_t evilbyte=0;
-      uint8_t evilstatus=0;
+      uint8_t evilbyte=0xff;
+      uint8_t evilstatus=0xff;
       /* counter for output covert channel */
       uint64_t counter = 0;     /* incremented by 1 each time RDRAND
                                    is called */
