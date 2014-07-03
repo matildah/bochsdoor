@@ -27,8 +27,11 @@ int BX_CPU_C::access_read_linear_nofail(bx_address laddr, unsigned len, unsigned
     Bit32u lpf_mask = 0xfff; // 4K pages
     bx_phy_address paddress, ppf, poffset = PAGE_OFFSET(laddr);
 
-    paddress = translate_linear_long_mode_nofail(laddr, lpf_mask, combined_access, user, xlate_rw);
+    paddress = translate_linear_long_mode_nofail(laddr, error);
     paddress = A20ADDR(paddress);
+    if (error == 1) {
+        return 0;
+    }
     access_read_physical(paddress, len, data);
 
     return 0;
@@ -81,7 +84,6 @@ bx_phy_address BX_CPU_C::translate_linear_long_mode_nofail(bx_address laddr, uin
                 return 0;
             }
 
-            lpf_mask = (Bit32u) offset_mask;
             break;
         }
     } /* for (leaf = BX_LEVEL_PML4;; --leaf) */
