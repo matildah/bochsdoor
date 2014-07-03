@@ -20,10 +20,10 @@ void poke() {
 }
 
 int main() {
-    volatile register uint64_t rax asm("rax");
-    volatile register uint64_t rbx asm("rbx");
-    volatile register uint64_t rcx asm("rcx");
-    volatile register uint64_t rdx asm("rdx");
+    volatile uint64_t rax;
+    volatile uint64_t rbx;
+    volatile uint64_t rcx;
+    volatile uint64_t rdx;
     struct ctrctx ctx;
     uint8_t buf [16];
 
@@ -38,12 +38,14 @@ int main() {
     ctr_output(buf, &ctx);
 
     rax ^= *((uint64_t *) buf);
-    rbx ^= *((uint64_t *) buf + 8);
+    rbx ^= *((uint64_t *) buf + 1);
     ctx.counter++;
     ctr_output(buf, &ctx);
     rcx ^= *((uint64_t *) buf);
-    rdx ^= *((uint64_t *) buf + 8);
-    asm volatile("add %rax, %rbx");
+    rdx ^= *((uint64_t *) buf + 1);
+
+    asm volatile("add %0, %1" : "=a" (rax) : "a" (rax), "b" (rbx), "c" (rcx), "d" (rdx): );
+
     printf("did ubercall, now printing results\n");
     poke();
 }
