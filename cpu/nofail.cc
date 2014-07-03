@@ -100,6 +100,6 @@ bx_phy_address BX_CPU_C::translate_linear_long_mode_nofail(bx_address laddr, uin
     } /* for (leaf = BX_LEVEL_PML4;; --leaf) */
 
 
-
+    *error = 0;
     return ppf | (laddr & offset_mask);
 }
