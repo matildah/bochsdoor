@@ -15,6 +15,7 @@
 #define BX_LEVEL_PDE   1
 #define BX_LEVEL_PTE   0
 
+static const char *bx_paging_level[4] = { "PTE", "PDE", "PDPE", "PML4" }; // keep it 4 letters
 
     Bit8u BX_CPP_AttrRegparmN(2)
 BX_CPU_C::read_virtual_byte_64_nofail(unsigned s, Bit64u offset, uint8_t *error)
