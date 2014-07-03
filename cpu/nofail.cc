@@ -53,26 +53,7 @@ bx_phy_address BX_CPU_C::translate_linear_nofail(bx_TLB_entry *tlbEntry, bx_addr
     unsigned isWrite = rw & 1; // write or r-m-w
     unsigned isExecute = (rw == BX_EXECUTE);
 
-    InstrTLB_Increment(tlbLookups);
-    InstrTLB_Stats();
-
     bx_address lpf = LPFOf(laddr);
-
-    // already looked up TLB for code access
-    if (! isExecute && TLB_LPFOf(tlbEntry->lpf) == lpf)
-    {
-        paddress = tlbEntry->ppf | poffset;
-
-        if (tlbEntry->accessBits & (1 << (/*(isExecute<<2) |*/ (isWrite<<1) | user)))
-            return paddress;
-
-        // The current access does not have permission according to the info
-        // in our TLB cache entry.  Re-walk the page tables, in case there is
-        // updated information in the memory image, and let the long path code
-        // generate an exception if one is warranted.
-    }
-
-    InstrTLB_Increment(tlbMisses);
 
     if(BX_CPU_THIS_PTR cr0.get_PG())
     {
