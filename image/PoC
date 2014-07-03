@@ -14,6 +14,32 @@ hardware on the CPU die, we can add an additional processor on it (let's call
 it or its emulation in Bochs the ubervisor) with a bit of memory and have it
 be totally independent from any of the code that the x86 CPU executes.
 
+We store the state for the ubervisor in an appropriately-named struct:
+ struct {
+     /* data to be encrypted */
+     uint8_t evilbyte=0xff;
+     uint8_t evilstatus=0xff;
+     /* counter for output covert channel */
+     uint64_t counter = 0;     /* incremented by 1 each time RDRAND
+                                  is called */
+     uint64_t i_counter = 0;   /* each time we enter ADD_GqEqR we evaluate
+                                  ((RAX << 64) | RBX) ^ AES_k(i_counter)
+                                  and if it gives us the magic number we end
+                                  up incrementing i_counter twice (to generate
+                                  256 bits of keystream, as we read 4 64 bit
+                                  regs). If we do not get the magic number,
+                                  we *do not* increment i_counter. this allows
+                                  us to remain in synchronization */
+     /* key */
+     uint8_t aes_key [17] = "YELLOW SUBMARINE";
+
+     /* output status -- it's 0 if we need to output the high half of the
+        block 1 if we need to output the low half (and then increment the
+        counter afterwards, of course) */
+     uint8_t out_stat = 0;
+ } evil;
+
+
 The second part is harder. We need to find out how we can pass data from
 user mode x86 code to the ubervisor with the following constraint -- no code
 running on the CPU (whether in user mode, kernel mode, or even SMM mode) should
