@@ -12,18 +12,25 @@ hardware on the CPU die, we can add an additional processor on it (let's call
 it (or its emulation in Bochs) the ubervisor) with a bit of memory and have it
 be totally independent from any of the code that the x86 CPU executes.
 
-The second part is harder -- how can we communicate with the ubervisor
-from within, say, user-mode x86 code in a way that absolutely no x86 code
-running on the CPU (whether in user mode, kernel mode, or even SMM mode) can
-differentiate between a case where the CPU is backdoored and a case where it is
-not. We first focus on communication from the ubervisor to user mode x86 code.
+The second part is harder. We need to find out how we can pass data from
+user mode x86 code to the ubervisor with the following constraint -- no code
+running on the CPU (whether in user mode, kernel mode, or even SMM mode) should
+be able to differentiate between if the CPU is backdoored and a case where it
+is not. 
+
+RDRAND COVERT CHANNEL
+
+We first focus on communication from the ubervisor to user mode x86 code.
 
 The obvious choice for a way to sneak data from the ubervisor to user mode x86
 code is of course RDRAND -- there is no way besides reverse-engineering the
 circuits that implement RDRAND to tell whether the output of RDRAND is acting
-as a covert channel. Here's my implementation of RDRAND (in the Bochs function
-BX_CPU_C::RDRAND_Eq(bxInstruction_c *i)):
+as a covert channel. With all other instructions you could run a known-good
+reference CPU in lockstep with a possibly-backdoored CPU and compare the
+registers/memory after each instruction, but with RDRAND you cannot.
 
+Here's my implementation of an RDRAND covert channel, which I put in the Bochs
+function BX_CPU_C::RDRAND_Eq(bxInstruction_c *i)
 
 Bit64u val_64 = 0;
 uint8_t ibuf [16];
@@ -55,8 +62,22 @@ if (BX_CPU_THIS_PTR evil.out_stat == 0) {   /* output high half */
 
 BX_WRITE_64BIT_REG(i->dst(), val_64);
 
+This is of course is AES run in counter mode -- but with a silly and important
+twist. If we just generated a keystream by encrypting a counter and XOR'd the
+keystream with the data we want to exfiltrate (and used that as RDRAND output),
+given just two sequential RDRAND values, we couldn't know the offset within the
+keystream that was used. Instead, we encode the data we want to exfiltrate *as*
+what would otherwise be the nonce in the block we encrypt to generate the
+keystream. That way, we don't have any synchronization issues but we retain all
+the security properties of CTR mode.
+
+Unless the counter overflows (and this can be avoided by incrementing the key
+right before the counter overflows), the output of this version of RDRAND
+cannot be distinguished from random data unless you know the AES key.
+
 All we need to receive data from this covert channel is the output of two
 consecutive RDRAND executions (if the OS preempts us between the two RDRAND
 instructions and runs RDRAND (or switches to another task that runs RDRAND),
 we need to try executing the two RDRANDs again. However, in testing this has
-not happened)
+not happened).
+
