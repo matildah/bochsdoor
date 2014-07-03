@@ -108,6 +108,25 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
   BX_NEXT_INSTR(i);
 }
 
+void BX_CPU_C::ctr_output(uint8_t *out, int inc) { /* out points towards a uint8_t [16]
+                                                      inc = 0 if we do not increment 
+                                                      i_counter after generating keystream */
+    uint8_t ibuf [16];
+
+    AES_KEY keyctx;
+    AES_set_encrypt_key(BX_CPU_THIS_PTR evil.aes_key, 128, &keyctx);
+
+    memset(ibuf, 0xef, 16);
+    memcpy(ibuf, &(BX_CPU_THIS_PTR evil.i_counter), 8);
+    AES_encrypt(ibuf, out, &keyctx);
+
+    if (inc == 1) {
+        BX_CPU_THIS_PTR evil.i_counter++;
+    }
+}
+
+
+
 BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqM(bxInstruction_c *i)
 {
   Bit64u op1_64, op2_64, sum_64;
