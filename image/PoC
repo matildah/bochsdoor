@@ -8,9 +8,55 @@ exist without reverse-engineering the die of the CPU.
 In order to have a functioning backdoor we need several things -- we need a
 context in which to execute backdoor code, and ways to communicate with the
 backdoor code. The first one is easy to solve -- if we are able to create new
-hardware on the CPU die, we can add an additional processor on it with a bit of
-memory and have it be totally independent from any of the code that the x86 CPU
-executes.
+hardware on the CPU die, we can add an additional processor on it (let's call
+it (or its emulation in Bochs) the ubervisor) with a bit of memory and have it
+be totally independent from any of the code that the x86 CPU executes.
 
-The second part is harder -- how do we
+The second part is harder -- how can we communicate with the ubervisor
+from within, say, user-mode x86 code in a way that absolutely no x86 code
+running on the CPU (whether in user mode, kernel mode, or even SMM mode) can
+differentiate between a case where the CPU is backdoored and a case where it is
+not. We first focus on communication from the ubervisor to user mode x86 code.
 
+The obvious choice for a way to sneak data from the ubervisor to user mode x86
+code is of course RDRAND -- there is no way besides reverse-engineering the
+circuits that implement RDRAND to tell whether the output of RDRAND is acting
+as a covert channel. Here's my implementation of RDRAND (in the Bochs function
+BX_CPU_C::RDRAND_Eq(bxInstruction_c *i)):
+
+
+Bit64u val_64 = 0;
+uint8_t ibuf [16];
+/* input buffer is organized like this:
+   8 bytes -- counter
+   6 bytes of padding
+   1 byte -- evilstatus
+   1 byte -- evilbyte */
+uint8_t obuf [16];
+AES_KEY keyctx;
+
+AES_set_encrypt_key(BX_CPU_THIS_PTR evil.aes_key, 128, &keyctx);
+
+memcpy(ibuf,             &(BX_CPU_THIS_PTR evil.counter),    8);
+memset(ibuf + 8,         0xfe,                               6);
+memcpy(ibuf + 8 + 6,     &(BX_CPU_THIS_PTR evil.evilstatus), 1);
+memcpy(ibuf + 8 + 6 + 1, &(BX_CPU_THIS_PTR evil.evilbyte),   1);
+
+AES_encrypt(ibuf, obuf, &keyctx);
+
+if (BX_CPU_THIS_PTR evil.out_stat == 0) {   /* output high half */
+    memcpy(&val_64, obuf, 8);
+    BX_CPU_THIS_PTR evil.out_stat = 1;
+} else {                                    /* output lo half */
+    memcpy(&val_64, obuf + 8, 8);
+    BX_CPU_THIS_PTR evil.out_stat = 0;
+    BX_CPU_THIS_PTR evil.counter++;
+}
+
+BX_WRITE_64BIT_REG(i->dst(), val_64);
+
+All we need to receive data from this covert channel is the output of two
+consecutive RDRAND executions (if the OS preempts us between the two RDRAND
+instructions and runs RDRAND (or switches to another task that runs RDRAND),
+we need to try executing the two RDRANDs again. However, in testing this has
+not happened)
