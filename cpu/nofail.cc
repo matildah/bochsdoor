@@ -35,7 +35,7 @@ int BX_CPU_C::access_read_linear_nofail(bx_address laddr, unsigned len, unsigned
 }
 
 
-bx_phy_address BX_CPU_C::translate_linear_long_mode_nofail(bx_address laddr, Bit32u &lpf_mask, Bit32u &combined_access, unsigned user, unsigned rw)
+bx_phy_address BX_CPU_C::translate_linear_long_mode_nofail(bx_address laddr, uint8_t *error)
 {
     bx_phy_address entry_addr[4];
     bx_phy_address ppf = BX_CPU_THIS_PTR cr3 & BX_CR3_PAGING_MASK;
@@ -44,8 +44,6 @@ bx_phy_address BX_CPU_C::translate_linear_long_mode_nofail(bx_address laddr, Bit
     int leaf;
 
     Bit64u offset_mask = BX_CONST64(0x0000ffffffffffff);
-    lpf_mask = 0xfff;
-    combined_access = 0x06;
 
     Bit64u reserved = PAGING_PAE_RESERVED_BITS;
     if (! BX_CPU_THIS_PTR efer.get_NXE())
@@ -60,10 +58,11 @@ bx_phy_address BX_CPU_C::translate_linear_long_mode_nofail(bx_address laddr, Bit
 
         Bit64u curr_entry = entry[leaf];
         int fault = check_entry_PAE(bx_paging_level[leaf], curr_entry, reserved, rw, &nx_fault);
-        if (fault >= 0)
-            page_fault(fault, laddr, user, rw);
+        if (fault >= 0) {
+            *error = 1;
+            return 0;
+        }
 
-        combined_access &= curr_entry; // U/S and R/W
         ppf = curr_entry & BX_CONST64(0x000ffffffffff000);
 
         if (leaf == BX_LEVEL_PTE) break;
@@ -71,45 +70,23 @@ bx_phy_address BX_CPU_C::translate_linear_long_mode_nofail(bx_address laddr, Bit
         if (curr_entry & 0x80) {
             if (leaf > (BX_LEVEL_PDE + !!bx_cpuid_support_1g_paging())) {
                 BX_DEBUG(("PAE %s: PS bit set !", bx_paging_level[leaf]));
-                page_fault(ERROR_RESERVED | ERROR_PROTECTION, laddr, user, rw);
+                *error = 1;
+                return 0;
             }
 
             ppf &= BX_CONST64(0x000fffffffffe000);
             if (ppf & offset_mask) {
                 BX_DEBUG(("PAE %s: reserved bit is set: 0x" FMT_ADDRX64, bx_paging_level[leaf], curr_entry));
-                page_fault(ERROR_RESERVED | ERROR_PROTECTION, laddr, user, rw);
+                *error = 1;
+                return 0;
             }
 
             lpf_mask = (Bit32u) offset_mask;
             break;
         }
-    }
+    } /* for (leaf = BX_LEVEL_PML4;; --leaf) */
 
-    bx_bool isWrite = (rw & 1); // write or r-m-w
 
-    unsigned priv_index = (BX_CPU_THIS_PTR cr0.get_WP() << 4) | // bit 4
-        (user<<3) |                           // bit 3
-        (combined_access | isWrite);          // bit 2,1,0
-
-    if (!priv_check[priv_index] || nx_fault)
-        page_fault(ERROR_PROTECTION, laddr, user, rw);
-
-    if (BX_CPU_THIS_PTR cr4.get_SMEP() && rw == BX_EXECUTE && !user) {
-        if (combined_access & 0x4) // User page
-            page_fault(ERROR_PROTECTION, laddr, user, rw);
-    }
-
-    // SMAP protections are disabled if EFLAGS.AC=1
-    if (BX_CPU_THIS_PTR cr4.get_SMAP() && ! BX_CPU_THIS_PTR get_AC() && rw != BX_EXECUTE && ! user) {
-        if (combined_access & 0x4) // User page
-            page_fault(ERROR_PROTECTION, laddr, user, rw);
-    }
-
-    if (BX_CPU_THIS_PTR cr4.get_PGE())
-        combined_access |= (entry[leaf] & 0x100); // G
-
-    // Update A/D bits if needed
-    update_access_dirty_PAE(entry_addr, entry, BX_LEVEL_PML4, leaf, isWrite);
 
     return ppf | (laddr & offset_mask);
 }
