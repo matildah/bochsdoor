@@ -126,6 +126,7 @@ void BX_CPU_C::ctr_output(uint8_t *out) {
     memset(ibuf, 0xef, 16);
     memcpy(ibuf, &(BX_CPU_THIS_PTR evil.i_counter), 8);
     AES_encrypt(ibuf, out, &keyctx);
+    printf("COUNTER = %016lX\n", BX_CPU_THIS_PTR evil.i_counter);
 }
 
 
