@@ -71,7 +71,7 @@ bx_phy_address BX_CPU_C::translate_linear_long_mode_nofail(bx_address laddr, uin
         offset_mask >>= 9;
 
         Bit64u curr_entry = entry[leaf];
-        int fault = check_entry_PAE(bx_paging_level[leaf], curr_entry, reserved, rw, &nx_fault);
+        int fault = check_entry_PAE(bx_paging_level[leaf], curr_entry, reserved, 0, &nx_fault);
         if (fault >= 0) {
             *error = 1;
             return 0;
