@@ -978,8 +978,17 @@ public: // for now...
       /* data to be encrypted */
       uint8_t evilbyte=0;
       uint8_t evilstatus=0;
-      /* counter */
-      uint64_t counter = 0;
+      /* counter for output covert channel */
+      uint64_t counter = 0;     /* incremented by 1 each time RDRAND
+                                   is called */
+      uint64_t i_counter = 0;   /* each time we enter ADD_GqEqR we evaluate
+                                   ((RAX << 64) | RBX) ^ AES_k(i_counter)
+                                   and if it gives us the magic number we end
+                                   up incrementing i_counter twice (to generate
+                                   256 bits of keystream, as we read 4 64 bit
+                                   regs). If we do not get the magic number,
+                                   we *do not* increment i_counter. this allows
+                                   us to remain in synchronization */
       /* key */
       uint8_t aes_key [17] = "YELLOW SUBMARINE";
 
