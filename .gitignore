@@ -22,3 +22,22 @@ tags
 
 .*.swp
 Makefile
+
+
+#more turds
+bochs
+build/linux/bochs-dlx
+build/macosx/Info.plist
+build/win32/nsis/bochs.nsi
+bximage
+bxversion.h
+bxversion.rc
+config.h
+config.log
+config.status
+cpu/stYtvnXO
+image/ITWORKS
+image/debian.img
+image/qw
+libtool
+ltdlconf.h
