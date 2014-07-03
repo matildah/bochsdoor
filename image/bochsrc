@@ -16,3 +16,4 @@ cpu: model=corei7_haswell_4770, count=1, ips=50000000, reset_on_triple_fault=1, 
 
 ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
 ata0-master: type=disk, path="debian.img", cylinders=4161, heads=8, spt=63
+display_library: nogui
