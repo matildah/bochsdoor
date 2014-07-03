@@ -5,6 +5,16 @@
 #include "bochs.h"
 #include "cpu.h"
 #define LOG_THIS BX_CPU_THIS_PTR
+#define BX_CR3_PAGING_MASK    (BX_CONST64(0x000ffffffffff000))
+#define PAGE_DIRECTORY_NX_BIT (BX_CONST64(0x8000000000000000))
+#define BX_PAGING_PHY_ADDRESS_RESERVED_BITS \
+              (BX_PHY_ADDRESS_RESERVED_BITS & BX_CONST64(0xfffffffffffff))
+#define PAGING_PAE_RESERVED_BITS (BX_PAGING_PHY_ADDRESS_RESERVED_BITS)
+#define BX_LEVEL_PML4  3
+#define BX_LEVEL_PDPTE 2
+#define BX_LEVEL_PDE   1
+#define BX_LEVEL_PTE   0
+
 
     Bit8u BX_CPP_AttrRegparmN(2)
 BX_CPU_C::read_virtual_byte_64_nofail(unsigned s, Bit64u offset, uint8_t *error)
