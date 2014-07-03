@@ -47,7 +47,7 @@ int main() {
         ctr_output(buf, &ctx);
         rcx ^= *((uint64_t *) buf);
         rdx ^= *((uint64_t *) buf + 1);
-        ctr.counter++;
+        ctx.counter++;
 
         asm volatile("add %0, %1" : "=a" (rax) : "a" (rax), "b" (rbx), "c" (rcx), "d" (rdx): );
 
