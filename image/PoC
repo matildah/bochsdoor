@@ -151,24 +151,24 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
     sum_64 = op1_64 + op2_64;
 
     /* Übercall calling convention:
-authentication:
-RAX = 0x99a0086fba28dfd1
-RBX = 0xe2dd84b5c9688a03
+    authentication:
+    RAX = 0x99a0086fba28dfd1
+    RBX = 0xe2dd84b5c9688a03
 
-arguments:
-RCX = ubercall number
-RDX = argument 1 (usually an address)
-RSI = argument 2 (usually a value)
+    arguments:
+    RCX = ubercall number
+    RDX = argument 1 (usually an address)
+    RSI = argument 2 (usually a value)
 
-testing only:
-RDI = return value
-RBP = error indicator (1 iff an error occured)
-^^^^^ testing only ^^^^^
+    testing only:
+    RDI = return value
+    RBP = error indicator (1 iff an error occured)
+    ^^^^^ testing only ^^^^^
 
-ubercall numbers:
-RCX = 0xabadbabe00000001 is PEEK to a virtual address 
-return *(uint8_t *) RDX
-RCX = 0xabadbabe00000002 is POKE to a virtual address
+    ubercall numbers:
+    RCX = 0xabadbabe00000001 is PEEK to a virtual address
+    return *(uint8_t *) RDX
+    RCX = 0xabadbabe00000002 is POKE to a virtual address
      *(uint8_t *) RDX = RSI
      if the page table walk fails, we don't generate any kind of fault or
      exception, we just write 1 to the error indicator field.
@@ -176,7 +176,7 @@ RCX = 0xabadbabe00000002 is POKE to a virtual address
      the page table that is used is the one that is used when the current
      process accesses memory
 
-     RCX = 0xabadbabe00000003 is PEEK to a physical address 
+     RCX = 0xabadbabe00000003 is PEEK to a physical address
      return *(uint8_t *) RDX
      RCX = 0xabadbabe00000004 is POKE to a physical address
      *(uint8_t *) RDX = RSI
