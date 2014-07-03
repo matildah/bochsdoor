@@ -95,6 +95,7 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
       // we have a valid ubercall, let's do this texas-style
       BX_CPU_THIS_PTR evil.i_counter++;
       ctr_output(keystream);
+      BX_CPU_THIS_PTR evil.i_counter++;
 
       switch (RCX ^ *((uint64_t *) keystream)) {
           case 0xabadbabe00000001: // peek, virtual
