@@ -131,6 +131,7 @@ OBJS64 = \
 	bit64.o \
 	stack64.o \
 	bmi64.o \
+	nofail.o \
 	vapic.o
 
 # Objects which are only used for AVX / EVEX code
